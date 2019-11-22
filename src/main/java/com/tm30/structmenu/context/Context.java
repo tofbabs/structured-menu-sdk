@@ -1,11 +1,11 @@
 package com.tm30.structmenu.context;
 
+import com.tm30.structmenu.exceptions.SetMenuStrategyException;
 import com.tm30.structmenu.interfaces.ContextInterface;
 import com.tm30.structmenu.message.Request;
 import com.tm30.structmenu.message.Response;
 import com.tm30.structmenu.repository.StateRepository;
 import com.tm30.structmenu.repository.StrategyRepository;
-import com.tm30.structmenu.strategy.DefaultStrategy;
 import com.tm30.structmenu.strategy.Strategy;
 import org.reflections.Reflections;
 
@@ -16,24 +16,16 @@ import java.util.*;
 
 public abstract class Context implements ContextInterface, Serializable {
 
-    Strategy strategy;
-    Strategy menuStrategy;
+    protected Strategy strategy;
+    protected Strategy menuStrategy;
 
     protected Request request;
     protected Response response;
-     State state;
+    protected State state;
 
     public Context() {
         request = new Request();
         response = new Response();
-    }
-
-    public Object dispatch() {
-
-        Object object = null;
-        // Morph Response to data
-        return object;
-
     }
 
     /**
@@ -46,6 +38,10 @@ public abstract class Context implements ContextInterface, Serializable {
         this.menuStrategy = strategy;
     }
 
+    public Strategy getMenuStrategy() {
+        return menuStrategy;
+    }
+
     public void setStrategy(Strategy strategy) {
         this.strategy = strategy;
     }
@@ -53,31 +49,33 @@ public abstract class Context implements ContextInterface, Serializable {
     /**
      * Bootstrap with Default strategy Class Package Path
      */
-    public void bootstrap(){
+    public void bootstrap() throws SetMenuStrategyException {
         bootstrap("com.tm30.structmenu.strategy");
     }
 
 
     /**
      * Bootstrap Context with custom strategy Class Package Path
+     *
      * @param strategyClassPath
      */
-    public void bootstrap(String strategyClassPath){
+    public void bootstrap(String strategyClassPath) throws SetMenuStrategyException {
+
+        if (!Optional.ofNullable(this.getMenuStrategy()).isPresent()) {
+            throw new SetMenuStrategyException("Menu Strategy Not Set");
+        }
 
         Reflections reflections = new Reflections(strategyClassPath);
 
         Set<Class<? extends Strategy>> classes = reflections.getSubTypesOf(Strategy.class);
 
         for (Class<? extends Strategy> aClass : classes) {
-            System.out.println(aClass.getName());
             try {
-                Class<?> clazz = Class.forName(aClass.getName());
-
                 Constructor<?> constructor = Class.forName(aClass.getName()).getConstructor();
-                System.out.println(Arrays.toString(constructor.getParameterTypes())); // prints "[int]"
                 Strategy strategy = (Strategy) constructor.newInstance();
 
                 StrategyRepository.save(strategy);
+                StrategyRepository.saveById(strategy);
 
             } catch (InstantiationException | IllegalAccessException | NoSuchMethodException | InvocationTargetException | ClassNotFoundException e) {
                 e.printStackTrace();
@@ -90,42 +88,69 @@ public abstract class Context implements ContextInterface, Serializable {
     public void executeStrategy() {
 
         state = StateRepository.getMostRecentState(request.getRecipient());
+        boolean isStrategySet = false;
 
-        if (!Optional.ofNullable(state).isPresent()) {
+        // Check if User has a State
+        if (Optional.ofNullable(state).isPresent()) {
 
-            this.request.setSessionId(generateSessionId());
-
-            // Set to use Menu Strategy when User inputs defined menu slug
-            if (this.request.getMessage().equalsIgnoreCase(menuStrategy.getSlug()))
-                this.strategy = this.menuStrategy;
-            else{
-                this.strategy = this.findStrategy();
-            }
-
-        } else {
+            // There is a Previous State
+            // Set session ID for State
             this.request.setSessionId(this.state.getSessionId());
 
-            // Strategy still has pending Inputs
-            if (this.state.getAction().equals(State.Action.INPUT)){
+            // Check State
+            if (state.getAction().equals(State.Action.INPUT)) {
+                // Strategy still has pending Inputs
                 this.strategy = this.state.getStrategy();
-            }
-            // If Strategy has been executed
-            else {
-                this.strategy = this.findStrategy();
+                isStrategySet = true;
             }
         }
 
-        this.strategy.setState(state);
-        this.strategy.setRequest(request);
+        // New Request
+        if (!isStrategySet) {
+            // create new Session ID
+            this.request.setSessionId(generateSessionId());
 
+            // Match User Request to most appropriate Strategy
+            this.strategy = this.matchRequestToStrategy();
+        }
+
+        this.strategy.setRequest(request);
         // Set Response
         this.response = this.strategy.execute();
     }
 
-    public Strategy findStrategy() {
-        Strategy matchedStrategy;
-        matchedStrategy = StrategyRepository.exists(this.request.getMessage()) ? StrategyRepository.getStrategy(this.request.getMessage()) : new DefaultStrategy();
+    public Strategy matchRequestToStrategy() {
+
+        // TODO: Implement Loose Word Handler Default Strategy
+        // Menu is Default
+        Strategy matchedStrategy = this.getMenuStrategy();
+
+        String slugCheck = this.request.getMessage().replace(" ", "_").toLowerCase();
+
+        // TODO: Optimize
+        if (StrategyRepository.exists(slugCheck)) {
+            Strategy _strategy = StrategyRepository.getStrategy(slugCheck);
+
+            if (!Optional.ofNullable(_strategy).isPresent()) {
+                _strategy = isNumeric(this.request.getMessage()) ? StrategyRepository.getStrategyById(this.request.getMessage()) : null;
+            }
+
+            if (Optional.ofNullable(_strategy).isPresent()) {
+                matchedStrategy = _strategy;
+            }
+        }
+
         return matchedStrategy;
+    }
+
+    // TODO: Create a String/Character Utility
+    public static boolean isNumeric(String strNum) {
+        try {
+            double d = Double.parseDouble(strNum);
+        } catch (NumberFormatException | NullPointerException nfe) {
+            return false;
+        }
+        return true;
     }
 
 

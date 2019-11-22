@@ -1,20 +1,21 @@
 package com.tm30.structmenu.context;
 
 import com.tm30.structmenu.message.Request;
+import com.tm30.structmenu.repository.InputRepository;
 import com.tm30.structmenu.repository.StateRepository;
-import com.tm30.structmenu.strategy.Strategy;
+import com.tm30.structmenu.strategy.MenuStrategy;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.io.Serializable;
+import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
 
-public class ContextTest implements Serializable{
+public class ContextTest implements Serializable {
 
     private Context context;
-    private Strategy menuStrategy;
 
     @Before
     public void setUp() throws Exception {
@@ -30,23 +31,25 @@ public class ContextTest implements Serializable{
                 this.request = new Request();
                 this.request.setMessage(dataArray[0]);
                 this.request.setRecipient(dataArray[1]);
+                this.request.setServiceCode(dataArray[2]);
             }
 
             @Override
             public Object dispatch() {
                 String data;
 
-                data = this.response.getMessage() + ";" + this.response.getRecipient();
+                data = this.response.getMessage() + ";" + this.response.getRecipient() + ";" + this.response.getServiceCode();
                 return data;
             }
         }
 
         context = new TestContext();
 
-        String path = this.getClass().getCanonicalName();
-        context.bootstrap(path);
+//        String path = this.getClass().getCanonicalName();
+        context.setMenuStrategy(new MenuStrategy());
 
-        context.setMenuStrategy(menuStrategy);
+        context.bootstrap();
+
 
     }
 
@@ -55,28 +58,56 @@ public class ContextTest implements Serializable{
         StateRepository.delete(this.context.state);
     }
 
-    /**
-     * Test to see that the message "Got it!" is sent in the response.
-     */
     @Test
-    public void testContext() {
+    public void testGetMenuStrategyMatchBySlug() {
+        String data = "menu;08034206970;55010";
 
-        String data = "12;08034206970";
         context.morphToRequest(data);
         context.executeStrategy();
-
-        assertEquals("Welcome to OneMoney;08034206970", context.dispatch());
+        assertEquals("Welcome to Test Menu Service\n1. Travel\n2. Health\n;08034206970;55010", context.dispatch());
     }
 
     @Test
-    public void testFindStrategy(){
-
-        String data = "1;08034206970";
+    public void testGetStrategyBySlug() {
+        String data = "travel;08034206970;55010";
         context.morphToRequest(data);
-        context.findStrategy();
+        context.executeStrategy();
+        assertEquals("This is Travel Strategy for 08034206970;08034206970;55010", context.dispatch());
+    }
+
+
+    @Test
+    public void testGetStrategyByUniqueId() {
+        String data = "1;08034206970;55010";
+        context.morphToRequest(data);
+        context.executeStrategy();
+        assertEquals("This is Travel Strategy for 08034206970;08034206970;55010", context.dispatch());
+    }
+
+    @Test
+    public void testStrategyWithInput() {
+
+        String data = "health;08034206970;55010";
+        context.morphToRequest(data);
         context.executeStrategy();
 
-        assertEquals("I found Test Strategy;08034206970", context.dispatch());
+        assertEquals("Enter your Name;08034206970;55010", context.dispatch());
 
     }
+
+    @Test
+    public void testStrategyInputResponse() {
+
+        String data = "health;08034206970;55010";
+        context.morphToRequest(data);
+        context.executeStrategy();
+        String result = (String) context.dispatch();
+
+        data = "Tofunmi Babatunde;08034206970;55010";
+        context.morphToRequest(data);
+        context.executeStrategy();
+
+        assertEquals("This is Health Result for Tofunmi Babatunde;08034206970;55010", context.dispatch());
+    }
+
 }

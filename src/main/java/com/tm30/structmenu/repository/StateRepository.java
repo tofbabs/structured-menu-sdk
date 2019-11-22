@@ -3,6 +3,7 @@ package com.tm30.structmenu.repository;
 import com.tm30.structmenu.context.State;
 
 import java.io.*;
+import java.util.Optional;
 
 public class StateRepository {
 
@@ -23,18 +24,18 @@ public class StateRepository {
         }
     }
 
-    static public State getMostRecentState(String userId)  {
+    static public State getMostRecentState(String userId) {
         State state = null;
 
         try {
             File file = new File("/tmp/" + userId);
-            if (file.exists()){
+            if (file.exists()) {
                 ObjectInputStream oos = new ObjectInputStream(
                         new FileInputStream(file));
 
                 state = (State) oos.readObject();
             }
-        }  catch (ClassNotFoundException | IOException e) {
+        } catch (ClassNotFoundException | IOException e) {
             e.printStackTrace();
         }
 
@@ -42,17 +43,20 @@ public class StateRepository {
     }
 
 
-    static public Boolean delete(State state){
+    static public Boolean delete(State state) {
 
-        File f = new File("/tmp/" + state.getUserId());
+        if(! Optional.ofNullable(state).isPresent()) return false;
 
-        if (f.delete())
-            return true;
+        try {
+            File file = new File("/tmp/" + state.getUserId());
+            if (file.exists()) return file.delete();
+        } catch (Exception e) {
+
+        }
 
         return false;
 
     }
-
 
 
 }

@@ -28,12 +28,25 @@ public abstract class Input implements InputInterface, Serializable{
     }
 
     @Override
+    public void setParamValue(String paramValue) {
+        this.paramValue = paramValue;
+    }
+
+    @Override
     public String getParamValue() {
         return paramValue;
     }
 
+    public void setPrompt(String prompt) {
+        this.prompt = prompt;
+    }
+
     public String getPrompt() {
         return prompt;
+    }
+
+    public void setParamKey(String paramKey) {
+        this.paramKey = paramKey;
     }
 
     @Override
@@ -57,10 +70,6 @@ public abstract class Input implements InputInterface, Serializable{
         return type;
     }
 
-    @Override
-    public void setParamValue(String paramValue) {
-        this.paramValue = paramValue;
-    }
 
     @Override
     public void setRequest(Request request) {

@@ -1,6 +1,7 @@
 package com.tm30.structmenu.context;
 
 import com.tm30.structmenu.input.Input;
+import com.tm30.structmenu.input.NameInput;
 import com.tm30.structmenu.interfaces.StrategyInterface;
 import com.tm30.structmenu.message.Request;
 import com.tm30.structmenu.message.Response;
@@ -19,20 +20,7 @@ public class StrategyTest {
     @Before
     public void setUp() throws Exception {
 
-        class TestStrategy extends Strategy {
-        }
-        this.strategy = new TestStrategy();
 
-        class TestInput extends Input {
-
-            public TestInput() {
-                this.paramKey = "name";
-                this.prompt = "Kindly Enter your name";
-
-            }
-
-        }
-        this.input = new TestInput();
     }
 
     @After

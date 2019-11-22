@@ -4,6 +4,7 @@ import com.tm30.structmenu.input.Input;
 import com.tm30.structmenu.strategy.Strategy;
 
 import java.io.*;
+import java.util.Optional;
 
 public class InputRepository {
 
@@ -45,7 +46,7 @@ public class InputRepository {
 
             String line = buf.readLine();
 
-            while(line != null){
+            while (line != null) {
                 sb.append(line);
                 line = buf.readLine();
             }
@@ -61,14 +62,16 @@ public class InputRepository {
 
     static public Boolean delete(Input input) {
 
+        if (!Optional.ofNullable(input).isPresent()) return false;
+
         try {
             String fileName = "/tmp/" + input.getRequest().getRecipient() + input.getParamKey();
             File f = new File(fileName);
 
             if (f.delete())
                 return true;
-        } catch (NullPointerException e){
-//            e.printStackTrace();
+        } catch (NullPointerException e) {
+            e.printStackTrace();
         }
 
         return false;

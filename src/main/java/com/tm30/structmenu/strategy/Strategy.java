@@ -136,11 +136,12 @@ public abstract class Strategy implements StrategyInterface, Serializable {
     public void obtainInput() {
 
         int index = 0;
+        nextInput = null;
 
         // Update Value for current input if exist
         if (Optional.ofNullable(state).isPresent() ) {
 
-            if (Optional.ofNullable(state.getInput()).isPresent()){
+            if (state.getAction().equals(State.Action.INPUT) && Optional.ofNullable(state.getInput()).isPresent()){
                 Input currentInput = state.getInput();
                 currentInput.setRequest(this.request);
                 currentInput.updateValue();
@@ -154,7 +155,7 @@ public abstract class Strategy implements StrategyInterface, Serializable {
         // Use List inputList instead of Iterator inputs
         // inputs is transient
 
-        boolean hasNext = inputList.size()  > index;
+        boolean hasNext = Optional.ofNullable(inputList).isPresent() ? inputList.size()  > index : false;
         if (hasNext) {
             nextInput = inputList.get(index);
             this.response.setMessage(nextInput.getPrompt());
@@ -165,9 +166,12 @@ public abstract class Strategy implements StrategyInterface, Serializable {
 
         String string = "";
 
-        if (this.strategies.hasNext()){
-            StrategyInterface strategy = this.strategies.next();
-            string = strategy.getUniqueId() + ". " + strategy.getSlug() + "\n";
+        if (Optional.ofNullable(strategyList).isPresent()) {
+            for (Strategy stat : strategyList) {
+
+                String label = stat.getSlug().substring(0, 1).toUpperCase() + stat.getSlug().substring(1).toLowerCase();
+                string += stat.getUniqueId() + ". " + label + "\n";
+            }
         }
 
         return string;

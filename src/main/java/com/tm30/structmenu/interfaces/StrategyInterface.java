@@ -4,6 +4,7 @@ import com.tm30.structmenu.context.State;
 import com.tm30.structmenu.input.Input;
 import com.tm30.structmenu.message.Request;
 import com.tm30.structmenu.message.Response;
+import com.tm30.structmenu.strategy.Strategy;
 
 import java.util.Iterator;
 
@@ -17,7 +18,7 @@ public interface StrategyInterface {
 
     String getSlug();
 
-    void setChildStrategies(StrategyInterface... strategies);
+    void setChildStrategies(Strategy... strategies);
 
     void setInputs(Input... inputs);
 
