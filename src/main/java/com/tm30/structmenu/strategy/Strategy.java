@@ -21,10 +21,12 @@ public abstract class Strategy implements StrategyInterface, Serializable {
     static int UNIQUE_ID = 0;
     protected int uid = ++UNIQUE_ID;
 
-    protected Iterator<StrategyInterface> strategies;
-    transient protected Iterator<Input> inputs;
+    transient protected Iterator<StrategyInterface> strategies;
+    protected List<Optional<StrategyInterface[]>> strategyList;
 
+    transient protected Iterator<Input> inputs;
     protected List<Input> inputList;
+
     protected Input nextInput;
     protected Integer nextInputIndex = 0;
 
@@ -86,6 +88,7 @@ public abstract class Strategy implements StrategyInterface, Serializable {
     @Override
     public void setChildStrategies(StrategyInterface... strategies) {
         this.strategies = Arrays.asList(strategies).iterator();
+        this.strategyList = Arrays.asList(Optional.ofNullable(strategies));
     }
 
     @Override
