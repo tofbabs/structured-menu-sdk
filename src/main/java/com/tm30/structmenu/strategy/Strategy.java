@@ -21,8 +21,8 @@ public abstract class Strategy implements StrategyInterface, Serializable {
     static int UNIQUE_ID = 0;
     protected int uid = ++UNIQUE_ID;
 
-    transient protected Iterator<StrategyInterface> strategies;
-    protected List<Optional<StrategyInterface[]>> strategyList;
+    transient protected Iterator<Strategy> strategies;
+    protected List<Strategy> strategyList;
 
     transient protected Iterator<Input> inputs;
     protected List<Input> inputList;
@@ -86,9 +86,9 @@ public abstract class Strategy implements StrategyInterface, Serializable {
     }
 
     @Override
-    public void setChildStrategies(StrategyInterface... strategies) {
+    public void setChildStrategies(Strategy... strategies) {
         this.strategies = Arrays.asList(strategies).iterator();
-        this.strategyList = Arrays.asList(Optional.ofNullable(strategies));
+        this.strategyList = Arrays.asList(strategies);
     }
 
     @Override
@@ -138,14 +138,17 @@ public abstract class Strategy implements StrategyInterface, Serializable {
         int index = 0;
 
         // Update Value for current input if exist
-        if (Optional.ofNullable(state).isPresent() &&
-                Optional.ofNullable(state.getInput()).isPresent()) {
-            Input currentInput = state.getInput();
-            currentInput.setRequest(this.request);
-            currentInput.updateValue();
+        if (Optional.ofNullable(state).isPresent() ) {
 
-            index = inputList.indexOf(state.getInput());
-            index++;
+            if (Optional.ofNullable(state.getInput()).isPresent()){
+                Input currentInput = state.getInput();
+                currentInput.setRequest(this.request);
+                currentInput.updateValue();
+
+                index = inputList.indexOf(state.getInput());
+                index++;
+            }
+
         }
 
         // Use List inputList instead of Iterator inputs
