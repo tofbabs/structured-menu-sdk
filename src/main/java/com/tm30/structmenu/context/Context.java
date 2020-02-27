@@ -74,6 +74,8 @@ public abstract class Context implements ContextInterface, Serializable {
                 Constructor<?> constructor = Class.forName(aClass.getName()).getConstructor();
                 Strategy strategy = (Strategy) constructor.newInstance();
 
+                // TODO: Throw Exception based on
+
                 StrategyRepository.save(strategy);
                 StrategyRepository.saveById(strategy);
 
